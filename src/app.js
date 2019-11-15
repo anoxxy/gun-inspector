@@ -6,7 +6,9 @@ require("gun/lib/open");
 
 const App = () => {
   const urlParams = new URLSearchParams(window.location.search);
-  const initialSubscribed = urlParams.get("id").split(",");
+  const initialSubscribed = (urlParams.get("id") || "")
+    .split(",")
+    .filter(Boolean);
 
   return <GunInspector initialSubscribed={initialSubscribed} />;
 };
