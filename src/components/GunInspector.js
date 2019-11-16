@@ -5,22 +5,15 @@ const Gun = require("gun/gun");
 
 const getId = element => element["_"]["#"];
 
-const updateCollection = update => element => {
-  const id = getId(element);
-  update(collection => ({
-    ...collection,
-    [id]: element
-      ? {
-          ...collection[id],
-          ...element
-        }
-      : element
-  }));
+const useRerender = () => {
+  const [, setRender] = useState({});
+  const rerender = () => setRender({});
+  return rerender;
 };
 
 export const GunInspector = ({ initialSubscribed }) => {
   const [gun, setGun] = useState(null);
-  const [nodes, setNodes] = useState({});
+  const rerender = useRerender();
   const [rootSubscribed, setRootSubscribed] = useState(initialSubscribed);
   const [subscribed, setSubscribed] = useState(initialSubscribed);
 
@@ -35,7 +28,7 @@ export const GunInspector = ({ initialSubscribed }) => {
   useEffect(() => {
     if (gun) {
       for (const id of subscribed) {
-        gun.get(id).on(updateCollection(setNodes));
+        gun.get(id).on(rerender);
       }
     }
   }, [gun]);
@@ -47,7 +40,7 @@ export const GunInspector = ({ initialSubscribed }) => {
   return (
     <Inspector
       getId={getId}
-      nodes={nodes}
+      nodes={gun._.graph}
       subscribed={rootSubscribed}
       onSubscribe={(id, root) => {
         if (root && !rootSubscribed.includes(id)) {
@@ -55,11 +48,10 @@ export const GunInspector = ({ initialSubscribed }) => {
         }
         if (!subscribed.includes(id)) {
           setSubscribed([...subscribed, id]);
-          gun.get(id).on(updateCollection(setNodes));
+          gun.get(id).on(rerender);
         }
       }}
       onSetValue={(id, key, value) => {
-        console.log(id, key, value);
         gun
           .get(id)
           .get(key)
