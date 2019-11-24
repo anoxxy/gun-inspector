@@ -16,6 +16,10 @@ html,
   display: flex;
 }
 
+.nodes {
+  margin-bottom: 1rem;
+}
+
 .node-id {
 }
 
@@ -61,4 +65,18 @@ input {
   padding: 0;
   font-size: inherit;
   display: inline;
+}
+
+a {
+  color: inherit;
+}
+
+.pair {
+  margin-bottom: 1rem;
+}
+
+.add-keys input,
+.add-keys button {
+  display: block;
+  margin-bottom: 0.5rem;
 }

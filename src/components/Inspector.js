@@ -1,19 +1,34 @@
 import React, { useState, useRef } from "react";
 
-export const Inspector = ({ nodes, subscribed, onSetValue, onSubscribe }) => {
+export const Inspector = ({
+  nodes,
+  subscribed,
+  onSetValue,
+  onSubscribe,
+  onCreateNode,
+  onCreateProtectedNode,
+  keys,
+  onAddKeys
+}) => {
   const newSubscription = useRef(null);
   return (
     <div>
       <h1>GUN Data Inspector</h1>
-      {subscribed.map(id => (
-        <Node
-          key={id}
-          id={id}
-          nodes={nodes}
-          onSetValue={onSetValue}
-          onSubscribe={onSubscribe}
-        />
-      ))}
+      <h2>Nodes</h2>
+      {subscribed.length > 0 && (
+        <div className="nodes">
+          {subscribed.map(id => (
+            <Node
+              key={id}
+              id={id}
+              keys={keys}
+              nodes={nodes}
+              onSetValue={onSetValue}
+              onSubscribe={onSubscribe}
+            />
+          ))}
+        </div>
+      )}
       <form
         onSubmit={e => {
           e.preventDefault();
@@ -23,6 +38,31 @@ export const Inspector = ({ nodes, subscribed, onSetValue, onSubscribe }) => {
       >
         <input ref={newSubscription} placeholder="insert any GUN id" />
       </form>
+      or
+      <div>
+        <a
+          href="#"
+          onClick={e => {
+            e.preventDefault();
+            onCreateNode();
+          }}
+        >
+          Create new node
+        </a>
+      </div>
+      or
+      <div>
+        <a
+          href="#"
+          onClick={e => {
+            e.preventDefault();
+            onCreateProtectedNode();
+          }}
+        >
+          Create new protected node
+        </a>
+      </div>
+      <Keys keys={keys} onAddKeys={onAddKeys} />
     </div>
   );
 };
@@ -39,7 +79,7 @@ export const Node = ({ id, nodes, onSetValue, onSubscribe }) => {
         {Object.keys(node)
           .filter(key => key !== "_")
           .map(key =>
-            typeof node[key] === "object" ? (
+            typeof node[key] === "object" && node[key]["#"] ? (
               <div key={key} className="reference-attribute">
                 <div className="key">{`"${key}" ->`}</div>
                 <Reference
@@ -123,6 +163,8 @@ const Value = ({ value, onSetValue }) => {
             placeholder="value"
           />
         </form>
+      ) : typeof value === "object" ? (
+        JSON.stringify(value)
       ) : (
         value
       )}
@@ -160,6 +202,38 @@ const Reference = ({ reference, onSubscribe, nodes, onSetValue }) => {
           {id}
         </a>
       )}
+    </div>
+  );
+};
+
+const Keys = ({ keys, onAddKeys }) => {
+  const pub = useRef();
+  const priv = useRef();
+
+  return (
+    <div>
+      <h2>Keys</h2>
+      {Object.keys(keys).map(key => (
+        <div key={key} className="pair">
+          <div className="pub">
+            <b>Priv:</b> {key}
+          </div>
+          <div className="priv">
+            <b>Pub:</b> {keys[key]}
+          </div>
+        </div>
+      ))}
+      <form
+        className="add-keys"
+        onSubmit={e => {
+          e.preventDefault();
+          onAddKeys(pub.current.value, priv.current.value);
+        }}
+      >
+        <input ref={pub} placeholder="pub" />
+        <input ref={priv} placeholder="priv" />
+        <button type="submit">Add key pair</button>
+      </form>
     </div>
   );
 };

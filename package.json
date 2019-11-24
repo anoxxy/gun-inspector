@@ -13,10 +13,13 @@
     "start": "webpack-dev-server --hot --mode development"
   },
   "dependencies": {
+    "@babel/preset-modules": "^0.1.1",
+    "@peculiar/webcrypto": "^1.0.21",
     "gun": "^0.2019.930",
     "react": "^16.11.0",
     "react-dom": "^16.11.0",
-    "react-hot-loader": "^4.12.16"
+    "react-hot-loader": "^4.12.16",
+    "text-encoding": "^0.7.0"
   },
   "devDependencies": {
     "@babel/core": "^7.7.2",
