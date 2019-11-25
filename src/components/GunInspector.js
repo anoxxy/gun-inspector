@@ -1,14 +1,9 @@
-import { Node, Inspector } from "./Inspector";
+import { Inspector } from "./Inspector";
 import React, { useState, useEffect } from "react";
+import { getId, getUUID, getPub } from "../utils";
 
 const Gun = require("gun/gun");
 const SEA = require("gun/sea");
-
-const getId = element => element["_"]["#"];
-
-const getUUID = gun => gun.opt()._.opt.uuid();
-
-const PROTECTED = /^(.*)~([^@].*)\./;
 
 export const GunInspector = ({ initialSubscribed }) => {
   const [gun, setGun] = useState(null);
@@ -18,6 +13,7 @@ export const GunInspector = ({ initialSubscribed }) => {
   const [subscribed, setSubscribed] = useState(initialSubscribed);
   const [keys, setKeys] = useState({});
   const [nodes, setNodes] = useState({});
+  const [decrypted, setDecrypted] = useState({});
 
   useEffect(() => {
     setGun(
@@ -41,9 +37,8 @@ export const GunInspector = ({ initialSubscribed }) => {
         const nodes = {};
         for (const id of Object.keys(gun._.graph)) {
           const node = { ...gun._.graph[id] };
-          const match = PROTECTED.exec(id);
-          if (match) {
-            const pub = match[2];
+          const pub = getPub(id);
+          if (pub) {
             for (const key of Object.keys(node).filter(
               key => !["_", "pub"].includes(key)
             )) {
@@ -53,7 +48,6 @@ export const GunInspector = ({ initialSubscribed }) => {
                 // gun provides auth values as stringified object ¯\_(ツ)_/¯
                 verified = JSON.parse(value);
               } catch (e) {
-                console.log(e);
                 verified = await SEA.verify(value, pub);
               }
               node[key] = verified[":"];
@@ -76,6 +70,8 @@ export const GunInspector = ({ initialSubscribed }) => {
       nodes={nodes}
       subscribed={rootSubscribed}
       keys={keys}
+      user={gun.user().is}
+      decrypted={decrypted}
       onSubscribe={(id, root) => {
         if (root && !rootSubscribed.includes(id)) {
           setRootSubscribed([...rootSubscribed, id]);
@@ -85,10 +81,46 @@ export const GunInspector = ({ initialSubscribed }) => {
           gun.get(id).on(rerender);
         }
       }}
-      onSetValue={async (id, key, value) => {
-        const match = PROTECTED.exec(id);
-        if (match) {
-          const pub = match[2];
+      onSetValue={async (id, key, value, epriv) => {
+        if (epriv) {
+          value = await SEA.encrypt(value, { epriv });
+        }
+        const pub = getPub(id);
+        if (pub && !(gun.user()._.sea && gun.user()._.sea.pub === pub)) {
+          const priv = keys[pub];
+          if (!priv) {
+            return;
+          }
+          value = await SEA.sign(
+            {
+              "#": id,
+              ".": key,
+              ":": value,
+              ">": Gun.state()
+            },
+            { priv, pub }
+          );
+        }
+        gun
+          .get(id)
+          .get(key)
+          .put(value);
+      }}
+      onCreateSubNode={async (id, key, subId) => {
+        const pub = getPub(id);
+        if (!subId) {
+          subId = getUUID(gun);
+        }
+        if (pub) {
+          subId = `${subId}~${pub}.`;
+        }
+        if (!key) {
+          key = subId;
+        }
+        let value = {
+          "#": subId
+        };
+        if (pub) {
           const priv = keys[pub];
           if (!priv) {
             return;
@@ -121,6 +153,26 @@ export const GunInspector = ({ initialSubscribed }) => {
         setSubscribed([...subscribed, id]);
         setKeys({ ...keys, [pub]: priv });
         gun.get(id).on(rerender);
+      }}
+      onLogin={async (alias, pass) => {
+        await new Promise(res => gun.user().auth(alias, pass, res));
+        const { epub, epriv, pub, priv } = gun.user()._.sea;
+        setKeys({ ...keys, [pub]: priv, [epub]: epriv });
+      }}
+      onLogout={async () => {
+        gun.user().leave();
+        rerender();
+      }}
+      onDecrypt={async (value, epriv) => {
+        setDecrypted({
+          ...decrypted,
+          [typeof value === "object"
+            ? JSON.stringify(value)
+            : value]: await SEA.decrypt(value, { epriv })
+        });
+      }}
+      onAddKeys={(pub, priv) => {
+        setKeys({ ...keys, [pub]: priv });
       }}
     />
   );

@@ -26,6 +26,9 @@ html,
 .node-attributes {
   margin-left: 1rem;
 }
+.node-fixed-attributes {
+  margin-bottom: 1rem;
+}
 .reference {
   margin-left: 1rem;
 }
@@ -75,8 +78,24 @@ a {
   margin-bottom: 1rem;
 }
 
+.priv span {
+  cursor: pointer;
+}
+
 .add-keys input,
-.add-keys button {
+.add-keys button,
+.auth input,
+.auth button {
   display: block;
   margin-bottom: 0.5rem;
+}
+
+.new-sub-attribute {
+  margin-left: 2rem;
+}
+
+span.disabled {
+  color: gray;
+  font-style: italic;
+  font-size: 90%;
 }
