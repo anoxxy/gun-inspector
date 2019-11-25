@@ -103,7 +103,7 @@ export const Node = ({
             {Object.keys(node)
               .filter(key => key !== "_")
               .map(key =>
-                typeof node[key] === "object" && node[key]["#"] ? (
+                node[key] && typeof node[key] === "object" && node[key]["#"] ? (
                   <div key={key} className="reference-attribute">
                     <div className="key">{`"${key}" ->`}</div>
                     <Reference
