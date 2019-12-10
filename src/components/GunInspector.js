@@ -18,7 +18,7 @@ export const GunInspector = ({ initialSubscribed }) => {
   useEffect(() => {
     setGun(
       Gun({
-        peers: ["https://gunjs.herokuapp.com/gun"]
+		  peers: ["https://gunjs.herokuapp.com/gun", "http://nmr.io:8765/gun"]
       })
     );
   }, []);
